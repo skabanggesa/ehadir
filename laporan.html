@@ -289,7 +289,7 @@ function renderTable() {
             let cssClass = "";
             let tdStyle = "";
 
-            // --- LOGIK PENENTUAN STATUS & WARNA ---
+            // --- LOGIK HARI TANPA REKOD ---
             if (isFuture && !record) {
                 // Tarikh MASA DEPAN & tiada data
                 statusLabel = "";
@@ -303,41 +303,53 @@ function renderTable() {
                 // HARI PERSEKOLAHAN SUDAH LALU tetapi TIADA DATA = MERAH (TIDAK HADIR)
                 statusLabel = "?";
                 cssClass = "st-kosong";
-                jumlahHariSekolahBerlalu++; // Dikira dalam jumlah hari persekolahan
+                jumlahHariSekolahBerlalu++; 
             }
 
-            // JIKA ADA DATA DALAM DATABASE
+            // --- JIKA ADA DATA DALAM DATABASE ---
             if (record) {
                 if (!isWeekend) {
                     jumlahHariSekolahBerlalu++; // Tambah jumlah hari sekolah
                 }
 
-                // Semak status kehadiran untuk pengiraan %
-                if (record.status === "Hadir" || 
-                    record.status === "Hadir Manual" || 
-                    record.status === "Lewat" || 
-                    record.status === "Kursus/Tugas Luar" || 
-                    record.status === "Tugas Luar") {
-                    jumlahHadir++;
+                // Tukar teks status kepada huruf kecil & buang jarak lebihan
+                const st = (record.status || "").trim().toLowerCase();
+
+                // 1. Pengiraan Jumlah Hadir (Merangkumi Lewat, Hadir Manual, Task Luar)
+                if (st.includes("hadir") || st.includes("lewat") || st.includes("kursus") || st.includes("tugas luar")) {
+                    if (!st.includes("tidak hadir")) {
+                        jumlahHadir++;
+                    }
                 }
 
-                // Tentukan Label dan Warna berasaskan status E-Hadir/Admin
-                switch(record.status) {
-                    case "Hadir Manual": statusLabel = "HM"; cssClass = "st-hadir"; break;
-                    case "Kursus/Tugas Luar": statusLabel = "TL"; cssClass = "st-luar"; break;
-                    case "Cuti Sakit": statusLabel = "CS"; cssClass = "st-sakit"; break;
-                    case "Cuti Rehat Khas":
-                    case "Cuti Rehat (CRK)":
-                    case "CRK": 
-                        statusLabel = "CRK"; 
-                        cssClass = "st-crk"; 
-                        break;
-                    case "Hadir": statusLabel = "H"; cssClass = "st-hadir"; break;
-                    case "Lewat": statusLabel = "L"; cssClass = "st-lewat"; break;
-                    case "Tugas Luar": statusLabel = "TL"; cssClass = "st-luar"; break;
-                    case "Cuti": statusLabel = "C"; cssClass = "st-crk"; break;
-                    case "Tidak Hadir": statusLabel = "TH"; cssClass = "st-kosong"; break;
-                    default: statusLabel = "?"; cssClass = "st-kosong"; break;
+                // 2. Penentuan Label dan Warna CSS (Tahan Lasak)
+                if (st.includes("lewat")) {
+                    statusLabel = "L"; 
+                    cssClass = "st-lewat";
+                } else if (st.includes("crk") || st.includes("cuti rehat")) {
+                    statusLabel = "CRK"; 
+                    cssClass = "st-crk";
+                } else if (st.includes("sakit")) {
+                    statusLabel = "CS"; 
+                    cssClass = "st-sakit";
+                } else if (st.includes("kursus") || st.includes("tugas luar")) {
+                    statusLabel = "TL"; 
+                    cssClass = "st-luar";
+                } else if (st.includes("manual")) {
+                    statusLabel = "HM"; 
+                    cssClass = "st-hadir";
+                } else if (st.includes("tidak hadir")) {
+                    statusLabel = "TH"; 
+                    cssClass = "st-kosong";
+                } else if (st.includes("cuti")) {
+                    statusLabel = "C"; 
+                    cssClass = "st-crk";
+                } else if (st.includes("hadir")) {
+                    statusLabel = "H"; 
+                    cssClass = "st-hadir";
+                } else {
+                    statusLabel = "?"; 
+                    cssClass = "st-kosong";
                 }
             }
 
@@ -370,7 +382,6 @@ function renderTable() {
         filterName();
     }
 }
-
         // =====================================
         // FUNGSI MODAL KEMASKINI (ADMIN)
         // =====================================
