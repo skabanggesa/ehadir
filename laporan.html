@@ -29,45 +29,37 @@
         
         tbody tr:hover { background-color: #f1f5f9; }
         
-/* Status Badges */
+        /* Status Badges */
         .status-cell { cursor: pointer; border-radius: 4px; font-weight: bold; width: 30px; height: 30px; display: inline-flex; justify-content: center; align-items: center; transition: 0.2s; }
         .status-cell:hover { transform: scale(1.1); box-shadow: 0 0 5px rgba(0,0,0,0.2); }
         
-        /* 1. Hadir Manual (Warna Hijau) */
-        .st-hadir { background: #0000FF; color: #166534; } 
-        
-        /* 2. Kursus / Tugas Luar (Warna Biru) */
+        /* Status Badges Colors */
+        .st-hadir { background: #0000FF; color: #ffffff; } 
         .st-luar { background: #dcfce7; color: #0369a1; } 
-        
-        /* 3. Cuti Sakit (Warna Kuning) */
         .st-sakit { background: #fef08a; color: #854d0e; } 
-        
-        /* 4. Cuti Rehat Khas (Warna Ungu) */
         .st-crk { background: #f3e8ff; color: #6b21a8; } 
-        
-        /* 5. Tiada Data / Kosong (Warna Merah) */
+        .st-lewat { background: #fde047; color: #854d0e; } /* Gaya untuk Lewat */
         .st-kosong {
             background-color: #ff4d4d; 
             color: white; 
             cursor: pointer;
-	}
+        }
 
-	/* 6. Hujung Minggu Tanpa Data (Warna Kelabu) */
         .st-hujung-minggu { 
-            background-color: #e2e8f0; /* Kelabu lembut */
-            color: #94a3b8; /* Kelabu gelap sikit untuk simbol tolak "-" */
+            background-color: #e2e8f0; 
+            color: #94a3b8; 
             cursor: pointer;
         }
         
-/* --- Modal Styles (Gabungan Kemas) --- */
+        /* --- Modal Styles --- */
         .overlay { 
             position: fixed; 
-            inset: 0; /* Ganti top, left, width, height */
+            inset: 0; 
             background: rgba(0,0,0,0.5); 
             display: none; 
             justify-content: center; 
             align-items: center; 
-            z-index: 9999; /* Ditinggikan supaya tak tenggelam di belakang jadual */
+            z-index: 9999; 
         }
         
         .modal { 
@@ -95,15 +87,43 @@
         /* Loading */
         #loadingMsg { display: none; text-align: center; padding: 20px; font-weight: bold; color: var(--accent); }
 
-	/* --- GAYA UNTUK CETAKAN (PRINT) --- */
+        /* --- HEADER KHAS UNTUK CETAKAN --- */
+        .print-header {
+            display: none;
+        }
+
+        /* --- GAYA UNTUK CETAKAN (PRINT) --- */
         @media print {
-            @page { size: landscape; margin: 1cm; }
-            body { background: white; padding: 0; }
-            .header-section { box-shadow: none; padding: 0; margin-bottom: 10px; }
-            .filter-box, #loadingMsg { display: none !important; }
+            @page { size: landscape; margin: 0.8cm; }
+            body { background: white; padding: 0; zoom: 100%; }
+            
+            /* Sembunyikan elemen navigasi / kawalan */
+            .header-section, .filter-box, #loadingMsg, .modal, .overlay { display: none !important; }
+            
+            /* Tunjukkan Tajuk Cetakan Khas di atas */
+            .print-header {
+                display: block !important;
+                text-align: center;
+                margin-bottom: 15px;
+            }
+            .print-header h2 {
+                font-size: 16pt;
+                font-weight: 800;
+                margin: 0;
+                color: #000;
+                text-transform: uppercase;
+            }
+            .print-header h3 {
+                font-size: 12pt;
+                font-weight: 700;
+                margin: 5px 0 0 0;
+                color: #000;
+                text-transform: uppercase;
+            }
+
             .table-container { box-shadow: none; max-height: none; overflow: visible; }
             table { min-width: 100%; border: 1px solid #000; }
-            th, td { border: 1px solid #000 !important; color: #000; padding: 4px; font-size: 11px; }
+            th, td { border: 1px solid #000 !important; color: #000; padding: 4px; font-size: 10px; }
             .sticky-col { position: static; box-shadow: none; }
             
             /* Paksa mesin pencetak keluarkan warna latar belakang */
@@ -113,10 +133,15 @@
 </head>
 <body>
 
+    <!-- Header Khas Apabila Dicetak -->
+    <div class="print-header">
+        <h2>ANALISIS KEHADIRAN STAF SK ABANG GESA</h2>
+        <h3 id="printMonthText">BAGI BULAN : -</h3>
+    </div>
+
     <div class="header-section">
         <h1>Analisis Kehadiran Staf</h1>
         <div class="filter-box">
-            <!-- Tambah kotak carian nama di sini -->
             <input type="text" id="searchName" placeholder="🔍 Cari Nama Guru..." onkeyup="filterName()" style="padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 1rem; width: 200px;">
             
             <input type="month" id="monthPicker">
@@ -236,152 +261,149 @@
             }
         };
 
-function renderTable() {
-    const thead = document.getElementById('tableHead');
-    const tbody = document.getElementById('tableBody');
-    
-    // 1. Ambil tarikh hari ini (tanpa masa) untuk semakan tarikh masa depan
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    // 2. Jana Header (Nama + Hari 1-31 + Kolum %)
-    let headHTML = `<tr><th class="sticky-col">Nama Guru</th>`;
-    for (let i = 1; i <= daysInMonth; i++) {
-        let dateObj = new Date(currentYear, currentMonth - 1, i);
-        let isWeekend = (dateObj.getDay() === 0 || dateObj.getDay() === 6);
-        let isFuture = (dateObj > today);
-
-        let thStyle = '';
-        if (isWeekend) {
-            thStyle = 'background-color: #e2e8f0;'; // Warna header hujung minggu
-        } else if (isFuture) {
-            thStyle = 'background-color: #f8fafc; color: #94a3b8;'; // Warna header masa depan
-        } 
-
-        headHTML += `<th style="${thStyle}">${i}</th>`;
-    }
-    headHTML += `<th style="background:#cbd5e1; color:#0f172a; min-width: 50px;">%</th></tr>`; 
-    thead.innerHTML = headHTML;
-
-    // 3. Jana Baris Untuk Setiap Guru
-    let bodyHTML = "";
-    usersList.forEach(name => {
-        bodyHTML += `<tr><td class="sticky-col">${name}</td>`;
-        
-        let jumlahHadir = 0; 
-        let jumlahHariSekolahBerlalu = 0; // Denominator sebenar untuk %
-        
-        for (let i = 1; i <= daysInMonth; i++) {
-            const dStr = String(i).padStart(2, '0');
-            const mStr = String(currentMonth).padStart(2, '0');
-            const dateStr = `${currentYear}-${mStr}-${dStr}`; // Format: YYYY-MM-DD
+        function renderTable() {
+            const thead = document.getElementById('tableHead');
+            const tbody = document.getElementById('tableBody');
             
-            let dateObj = new Date(currentYear, currentMonth - 1, i);
-            dateObj.setHours(0, 0, 0, 0);
+            // 1. Ambil tarikh hari ini (tanpa masa) untuk semakan tarikh masa depan
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
 
-            let isWeekend = (dateObj.getDay() === 0 || dateObj.getDay() === 6);
-            let isFuture = (dateObj > today);
+            // 2. Jana Header (Nama + Hari 1-31 + Kolum %)
+            let headHTML = `<tr><th class="sticky-col">Nama Guru</th>`;
+            for (let i = 1; i <= daysInMonth; i++) {
+                let dateObj = new Date(currentYear, currentMonth - 1, i);
+                let isWeekend = (dateObj.getDay() === 0 || dateObj.getDay() === 6);
+                let isFuture = (dateObj > today);
 
-            const key = `${name}_${dateStr}`;
-            const record = attendanceMap[key];
-            
-            let statusLabel = "";
-            let cssClass = "";
-            let tdStyle = "";
+                let thStyle = '';
+                if (isWeekend) {
+                    thStyle = 'background-color: #e2e8f0;'; // Warna header hujung minggu
+                } else if (isFuture) {
+                    thStyle = 'background-color: #f8fafc; color: #94a3b8;'; // Warna header masa depan
+                } 
 
-            // --- LOGIK HARI TANPA REKOD ---
-            if (isFuture && !record) {
-                // Tarikh MASA DEPAN & tiada data
-                statusLabel = "";
-                cssClass = "st-masa-depan";
-            } else if (isWeekend && !record) {
-                // HUJUNG MINGGU & tiada data
-                statusLabel = "-";
-                cssClass = "st-hujung-minggu";
-                tdStyle = 'background-color: #f8fafc;';
-            } else if (!isWeekend && !isFuture && !record) {
-                // HARI PERSEKOLAHAN SUDAH LALU tetapi TIADA DATA = MERAH (TIDAK HADIR)
-                statusLabel = "?";
-                cssClass = "st-kosong";
-                jumlahHariSekolahBerlalu++; 
+                headHTML += `<th style="${thStyle}">${i}</th>`;
             }
+            headHTML += `<th style="background:#cbd5e1; color:#0f172a; min-width: 50px;">%</th></tr>`; 
+            thead.innerHTML = headHTML;
 
-            // --- JIKA ADA DATA DALAM DATABASE ---
-            if (record) {
-                if (!isWeekend) {
-                    jumlahHariSekolahBerlalu++; // Tambah jumlah hari sekolah
-                }
+            // 3. Jana Baris Untuk Setiap Guru
+            let bodyHTML = "";
+            usersList.forEach(name => {
+                bodyHTML += `<tr><td class="sticky-col">${name}</td>`;
+                
+                let jumlahHadir = 0; 
+                let jumlahHariSekolahBerlalu = 0; // Denominator sebenar untuk %
+                
+                for (let i = 1; i <= daysInMonth; i++) {
+                    const dStr = String(i).padStart(2, '0');
+                    const mStr = String(currentMonth).padStart(2, '0');
+                    const dateStr = `${currentYear}-${mStr}-${dStr}`; // Format: YYYY-MM-DD
+                    
+                    let dateObj = new Date(currentYear, currentMonth - 1, i);
+                    dateObj.setHours(0, 0, 0, 0);
 
-                // Tukar teks status kepada huruf kecil & buang jarak lebihan
-                const st = (record.status || "").trim().toLowerCase();
+                    let isWeekend = (dateObj.getDay() === 0 || dateObj.getDay() === 6);
+                    let isFuture = (dateObj > today);
 
-                // 1. Pengiraan Jumlah Hadir (Merangkumi Lewat, Hadir Manual, Task Luar)
-                if (st.includes("hadir") || st.includes("lewat") || st.includes("kursus") || st.includes("tugas luar")) {
-                    if (!st.includes("tidak hadir")) {
-                        jumlahHadir++;
+                    const key = `${name}_${dateStr}`;
+                    const record = attendanceMap[key];
+                    
+                    let statusLabel = "";
+                    let cssClass = "";
+                    let tdStyle = "";
+
+                    // --- LOGIK HARI TANPA REKOD ---
+                    if (isFuture && !record) {
+                        statusLabel = "";
+                        cssClass = "st-masa-depan";
+                    } else if (isWeekend && !record) {
+                        statusLabel = "-";
+                        cssClass = "st-hujung-minggu";
+                        tdStyle = 'background-color: #f8fafc;';
+                    } else if (!isWeekend && !isFuture && !record) {
+                        statusLabel = "?";
+                        cssClass = "st-kosong";
+                        jumlahHariSekolahBerlalu++; 
                     }
-                }
 
-                // 2. Penentuan Label dan Warna CSS (Tahan Lasak)
-                if (st.includes("lewat")) {
-                    statusLabel = "L"; 
-                    cssClass = "st-lewat";
-                } else if (st.includes("crk") || st.includes("cuti rehat")) {
-                    statusLabel = "CRK"; 
-                    cssClass = "st-crk";
-                } else if (st.includes("sakit")) {
-                    statusLabel = "CS"; 
-                    cssClass = "st-sakit";
-                } else if (st.includes("kursus") || st.includes("tugas luar")) {
-                    statusLabel = "TL"; 
-                    cssClass = "st-luar";
-                } else if (st.includes("manual")) {
-                    statusLabel = "HM"; 
-                    cssClass = "st-hadir";
-                } else if (st.includes("tidak hadir")) {
-                    statusLabel = "TH"; 
-                    cssClass = "st-kosong";
-                } else if (st.includes("cuti")) {
-                    statusLabel = "C"; 
-                    cssClass = "st-crk";
-                } else if (st.includes("hadir")) {
-                    statusLabel = "H"; 
-                    cssClass = "st-hadir";
-                } else {
-                    statusLabel = "?"; 
-                    cssClass = "st-kosong";
+                    // --- JIKA ADA DATA DALAM DATABASE ---
+                    if (record) {
+                        if (!isWeekend) {
+                            jumlahHariSekolahBerlalu++; 
+                        }
+
+                        const st = (record.status || "").trim().toLowerCase();
+
+                        // 1. Pengiraan Jumlah Hadir
+                        if (st.includes("hadir") || st.includes("lewat") || st.includes("kursus") || st.includes("tugas luar")) {
+                            if (!st.includes("tidak hadir")) {
+                                jumlahHadir++;
+                            }
+                        }
+
+                        // 2. Penentuan Label dan Warna CSS
+                        if (st.includes("lewat")) {
+                            statusLabel = "L"; 
+                            cssClass = "st-lewat";
+                        } else if (st.includes("crk") || st.includes("cuti rehat")) {
+                            statusLabel = "CRK"; 
+                            cssClass = "st-crk";
+                        } else if (st.includes("sakit")) {
+                            statusLabel = "CS"; 
+                            cssClass = "st-sakit";
+                        } else if (st.includes("kursus") || st.includes("tugas luar")) {
+                            statusLabel = "TL"; 
+                            cssClass = "st-luar";
+                        } else if (st.includes("manual")) {
+                            statusLabel = "HM"; 
+                            cssClass = "st-hadir";
+                        } else if (st.includes("tidak hadir")) {
+                            statusLabel = "TH"; 
+                            cssClass = "st-kosong";
+                        } else if (st.includes("cuti")) {
+                            statusLabel = "C"; 
+                            cssClass = "st-crk";
+                        } else if (st.includes("hadir")) {
+                            statusLabel = "H"; 
+                            cssClass = "st-hadir";
+                        } else {
+                            statusLabel = "?"; 
+                            cssClass = "st-kosong";
+                        }
+                    }
+
+                    let docId = record ? record.docId : "";
+                    const safeName = name.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                    const safeStatus = record ? record.status.replace(/'/g, "\\'").replace(/"/g, "&quot;") : '';
+
+                    bodyHTML += `<td style="${tdStyle}">
+                        <div class="status-cell ${cssClass}" onclick="openModal('${safeName}', '${dateStr}', '${docId}', '${safeStatus}')">
+                            ${statusLabel}
+                        </div>
+                    </td>`;
                 }
+                
+                // 4. Pengiraan Peratusan Sebenar
+                let peratus = 0;
+                if (jumlahHariSekolahBerlalu > 0) {
+                    peratus = Math.round((jumlahHadir / jumlahHariSekolahBerlalu) * 100);
+                    if (peratus > 100) peratus = 100;
+                }
+                
+                bodyHTML += `<td style="text-align: center; font-weight: bold; background-color: #f1f5f9; color: #334155;">
+                                ${peratus}%
+                             </td></tr>`;
+            });
+            tbody.innerHTML = bodyHTML;
+
+            // Jalankan filter semula jika kotak carian ada teks
+            if(document.getElementById("searchName") && document.getElementById("searchName").value !== "") {
+                filterName();
             }
-
-            let docId = record ? record.docId : "";
-            const safeName = name.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-            const safeStatus = record ? record.status.replace(/'/g, "\\'").replace(/"/g, "&quot;") : '';
-
-            bodyHTML += `<td style="${tdStyle}">
-                <div class="status-cell ${cssClass}" onclick="openModal('${safeName}', '${dateStr}', '${docId}', '${safeStatus}')">
-                    ${statusLabel}
-                </div>
-            </td>`;
         }
-        
-        // 4. Pengiraan Peratusan Sebenar
-        let peratus = 0;
-        if (jumlahHariSekolahBerlalu > 0) {
-            peratus = Math.round((jumlahHadir / jumlahHariSekolahBerlalu) * 100);
-            if (peratus > 100) peratus = 100;
-        }
-        
-        bodyHTML += `<td style="text-align: center; font-weight: bold; background-color: #f1f5f9; color: #334155;">
-                        ${peratus}%
-                     </td></tr>`;
-    });
-    tbody.innerHTML = bodyHTML;
 
-    // Jalankan filter semula jika kotak carian ada teks
-    if(document.getElementById("searchName") && document.getElementById("searchName").value !== "") {
-        filterName();
-    }
-}
         // =====================================
         // FUNGSI MODAL KEMASKINI (ADMIN)
         // =====================================
@@ -390,7 +412,6 @@ function renderTable() {
             editTarget = { name, dateStr, docId };
             
             document.getElementById('modalInfo').innerHTML = `<strong>Nama:</strong> ${name} <br> <strong>Tarikh:</strong> ${dateStr}`;
-            // Tukar statusSelect kepada updateStatus
             document.getElementById('updateStatus').value = currentStatus || "";
             
             document.getElementById('editModal').style.display = "flex";
@@ -401,7 +422,6 @@ function renderTable() {
         };
 
         window.saveRecord = async function() {
-            // Tukar statusSelect kepada updateStatus
             const newStatus = document.getElementById('updateStatus').value;
             if (!newStatus) return alert("Sila pilih status, atau tekan Padam jika ingin mengosongkan.");
 
@@ -410,14 +430,11 @@ function renderTable() {
 
             try {
                 if (editTarget.docId) {
-                    // Update rekod sedia ada
                     await updateDoc(doc(db, "attendance", editTarget.docId), {
                         status: newStatus,
-			locationLink:""
+                        locationLink:""
                     });
                 } else {
-                    // Cipta rekod baharu (manual entry)
-                    // Cipta objek Date untuk jam 8 pagi pada tarikh yang dipilih
                     const [y, m, d] = editTarget.dateStr.split('-');
                     const manualDate = new Date(Number(y), Number(m)-1, Number(d), 8, 0, 0);
 
@@ -429,7 +446,6 @@ function renderTable() {
                     });
                 }
                 
-                // Segar semula jadual secara senyap
                 await loadReport();
             } catch (error) {
                 alert("Ralat mengemaskini: " + error.message);
@@ -440,7 +456,7 @@ function renderTable() {
         window.deleteRecord = async function() {
             if (!editTarget.docId) {
                 closeModal();
-                return; // Tiada rekod untuk dipadam
+                return;
             }
             
             const sah = confirm("Anda pasti mahu memadam rekod kehadiran ini?");
@@ -451,38 +467,48 @@ function renderTable() {
 
             try {
                 await deleteDoc(doc(db, "attendance", editTarget.docId));
-                await loadReport(); // Segar semula jadual
+                await loadReport();
             } catch (error) {
                 alert("Ralat memadam: " + error.message);
             }
         };
 
-window.cetakLaporan = function() {
-            // Pastikan data dah di-load sebelum cetak
+        // FUNGSI CETAK DENGAN HEADER DINAMIK
+        window.cetakLaporan = function() {
             if(Object.keys(attendanceMap).length === 0 && document.getElementById('tableBody').innerHTML.trim() === "") {
                 alert("Sila papar data bulan tersebut terlebih dahulu sebelum mencetak.");
                 return;
             }
+
+            const senaraiBulan = [
+                "JANUARI", "FEBRUARI", "MAC", "APRIL", "MEI", "JUN", 
+                "JULAI", "OGOS", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DISEMBER"
+            ];
+            
+            if (currentMonth && currentYear) {
+                const namaBulanTeks = senaraiBulan[currentMonth - 1];
+                const printMonthElem = document.getElementById('printMonthText');
+                if (printMonthElem) {
+                    printMonthElem.innerText = `BAGI BULAN : ${namaBulanTeks} ${currentYear}`;
+                }
+            }
+
             window.print();
         };
 
-// =====================================
+        // =====================================
         // FUNGSI CARIAN NAMA GURU
         // =====================================
         window.filterName = function() {
-            // 1. Dapatkan teks yang ditaip oleh admin
             const input = document.getElementById("searchName").value.toLowerCase();
             const tableBody = document.getElementById("tableBody");
             const trs = tableBody.getElementsByTagName("tr");
 
-            // 2. Semak setiap baris dalam jadual
             for (let i = 0; i < trs.length; i++) {
-                // Lajur pertama (indeks 0) adalah Nama Guru
                 let tdName = trs[i].getElementsByTagName("td")[0]; 
                 
                 if (tdName) {
                     let txtValue = tdName.textContent || tdName.innerText;
-                    // 3. Jika nama sepadan dengan teks ditaip, tunjukkan. Jika tidak, sembunyikan.
                     if (txtValue.toLowerCase().indexOf(input) > -1) {
                         trs[i].style.display = "";
                     } else {
