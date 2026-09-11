@@ -354,7 +354,7 @@ function checkIsLate(timeStr, role) {
             let masaHTML = "--:--";
             let roleDisplay = user.role || "GURU";
 
-if (record) {
+            if (record) {
                 countHadir++;
                 let timeStr = ""; 
                 if (record.timestamp) {
@@ -371,42 +371,37 @@ if (record) {
 
                 if (isLateByText || isLateByTime) {
                     warna = "tag-lewat";
-                    countLewat++; // Only increment overall late count for dashboard
+                    countLewat++; 
                 }
-                // Handle non-attendance statuses for dashboard counters (optional refinement)
                 if (stat.includes("MC") || stat.includes("CRK") || stat.includes("Kursus")) {
                     warna = "tag-tidak";
-                    // Technically these are "Present" in the list but "Absent" physically? 
-                    // For dashboard simple stats, we count them as "Hadir" (recorded), but analysis will be deeper.
                 }
 
-                // ==========================================
-                // TAMBAHAN BAHARU: LOGIK PAUTAN LOKASI PETA
-                // ==========================================
                 let mapButton = "";
                 if (record.locationLink) {
                     mapButton = `<br><a href="${record.locationLink}" target="_blank" style="font-size: 0.65rem; background: #e0f2fe; color: #0284c7; padding: 3px 6px; border-radius: 4px; text-decoration: none; margin-top: 4px; display: inline-block; font-weight: bold; border: 1px solid #bae6fd;">📍 Lihat Peta</a>`;
                 }
 
-                // Cantumkan tag status dengan butang peta
                 statusHTML = `<span class="tag ${warna}">${stat}</span> ${mapButton}`;
-                // ==========================================
             }
+
+            // 💡 Neutralkan tanda petik tunggal (') pada nama seperti NUR A'LIAH
+            const safeName = user.name.replace(/'/g, "\\'");
 
             tbody.innerHTML += `
                 <tr>
                     <td>
-                        <div style="font-weight:700; color:var(--text); cursor:pointer;" onclick="openIndividualCalendar('${user.name}')">${user.name}</div>
-                        <span class="role-badge" onclick="changeUserRole('${user.id}', '${user.name}', '${roleDisplay}')" title="Klik untuk tukar jawatan">${roleDisplay}</span>
+                        <div style="font-weight:700; color:var(--text); cursor:pointer;" onclick="openIndividualCalendar('${safeName}')">${user.name}</div>
+                        <span class="role-badge" onclick="changeUserRole('${user.id}', '${safeName}', '${roleDisplay}')" title="Klik untuk tukar jawatan">${roleDisplay}</span>
                     </td>
                     <td>${masaHTML}</td>
                     <td>${statusHTML}</td>
                     <td style="text-align:right;">
-                        <button onclick="openManualModal('${user.name}')" class="btn btn-outline" style="padding:5px 10px; font-size:0.6rem;">Edit</button>
+                        <button onclick="openManualModal('${safeName}')" class="btn btn-outline" style="padding:5px 10px; font-size:0.6rem;">Edit</button>
                         
-                        <button onclick="resetKehadiranBaris('${user.name}')" style="background:none; border:none; cursor:pointer; margin-left:10px; font-size: 1rem;" title="Padam/Reset Kehadiran Hari Ini Sahaja">🔄</button>
+                        <button onclick="resetKehadiranBaris('${safeName}')" style="background:none; border:none; cursor:pointer; margin-left:10px; font-size: 1rem;" title="Padam/Reset Kehadiran Hari Ini Sahaja">🔄</button>
                         
-                        <button onclick="confirmDeleteUser('${user.id}', '${user.name}')" style="background:none; border:none; color:var(--danger); cursor:pointer; margin-left:10px; font-size: 1rem;" title="Padam Keseluruhan Akaun">🗑️</button>
+                        <button onclick="confirmDeleteUser('${user.id}', '${safeName}')" style="background:none; border:none; color:var(--danger); cursor:pointer; margin-left:10px; font-size: 1rem;" title="Padam Keseluruhan Akaun">🗑️</button>
                     </td>
                 </tr>`;
         });
@@ -416,7 +411,7 @@ if (record) {
         document.getElementById('statLate').innerText = countLewat;
         document.getElementById('statAbsent').innerText = allUsers.length - countHadir;
     };
-
+    
     window.resetKehadiranBaris = async (namaGuru) => {
         if (!confirm(`AMARAN:\nAdakah anda mahu memadam rekod kehadiran untuk [ ${namaGuru} ] pada tarikh yang sedang dipaparkan?`)) return;
         
