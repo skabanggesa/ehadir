@@ -84,16 +84,15 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, query, where, updateDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyC4vbsw9PPdrSIwiCBg2t1XnkSo2k6aNhg",
-      authDomain: "e-hadir-ba989.firebaseapp.com",
-      projectId: "e-hadir-ba989",
-      storageBucket: "e-hadir-ba989.firebasestorage.app",
-      messagingSenderId: "777207462690",
-      appId: "1:777207462690:web:0c65d249532428bea6437b",
-      measurementId: "G-062X22JHXY"
+      apiKey: "AIzaSyD834R5Au1ksM0h-G0imluipJIN1br2g2g",
+      authDomain: "panitia-5be3a.firebaseapp.com",
+      projectId: "panitia-5be3a",
+      storageBucket: "panitia-5be3a.firebasestorage.app",
+      messagingSenderId: "814796521590",
+      appId: "1:814796521590:web:c0e31fa985401bcc571f57"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -166,17 +165,19 @@
         document.getElementById('status').innerText = "Memuatkan pangkalan data...";
 
         try {
-            const snap = await getDocs(collection(db, "users"));
+            const snap = await getDocs(collection(db, "teachers"));
             registeredUsers = snap.docs.map(doc => {
                 const data = doc.data();
-                let userDescs = [];
-                if (data.descriptors && Array.isArray(data.descriptors)) {
-                    userDescs = data.descriptors.map(item => new Float32Array(item.d));
-                }
+                // Skema master data SAGE: nama/jawatan/PIN menggunakan medan huruf besar.
+                const rawDescriptors = data.biometricData?.descriptors || data.descriptors || [];
+                const userDescs = Array.isArray(rawDescriptors)
+                    ? rawDescriptors.map(item => new Float32Array(item.d || item.descriptor || item))
+                    : [];
                 return {
-                    name: data.name,
+                    id: doc.id,
+                    name: String(data["NAMA GURU"] || data.NAMA || data.name || "").trim().toUpperCase(),
                     descriptors: userDescs,
-                    accessCode: data.accessCode // Tambahan ini membolehkan sistem menyemak kod
+                    accessCode: String(data["KATA LALUAN"] || data.accessCode || data.PIN || "").trim()
                 };
             });
             startCamera();
@@ -283,7 +284,7 @@
         const statusBox = document.getElementById('status'); 
         
         try {
-            const qAtt = query(collection(db, "attendance"), where("name", "==", name));
+            const qAtt = query(collection(db, "teacher_attendance"), where("name", "==", name));
             const querySnapshot = await getDocs(qAtt);
             
             let alreadyScanned = false;
@@ -307,7 +308,7 @@
                 overlayIcon.innerText = "ℹ️";
                 overlayText.innerHTML = `SUDAH DIREKODKAN<br>${name}<br><br><span style="font-size:1rem; opacity:0.9">Telah diimbas jam ${firstScannedTime}</span>`;
             } else {
-                await addDoc(collection(db, "attendance"), { name: name, timestamp: serverTimestamp(), status: status });
+                await addDoc(collection(db, "teacher_attendance"), { name: name, nama: name, status: status, timestamp: serverTimestamp(), source: "eHadir", projectId: "panitia-5be3a" });
                 overlay.style.backgroundColor = "#22c55e"; // Hijau
                 overlayIcon.innerText = "✅";
                 overlayText.innerHTML = `REKOD BERJAYA<br>${name}<br><br><span style="font-size:1rem; opacity:0.8">${status} pada ${now.toLocaleTimeString()}</span>`;
@@ -386,4 +387,3 @@
 </script>
 </body>
 </html>
-
