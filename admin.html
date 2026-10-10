@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pentadbir Pro | E-Hadir Analisis</title>
     
-    
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -157,6 +157,23 @@
     <div class="main-container">
         <div style="display: flex; flex-direction: column; gap: 20px;">
             <div class="card">
+                <h2>👤 Daftar Staf Baru</h2>
+                <video id="adminVideo" autoplay muted playsinline></video>
+                <div id="regStatus">AI SEDIA</div>
+                
+<input type="text" id="staffName" placeholder="Nama Penuh" class="login-input" style="margin-top:10px;">
+                
+<select id="staffRole" class="login-input">
+    <option value="Guru">Jawatan: GURU</option>
+    <option value="AKP">Jawatan: AKP</option>
+</select>
+
+<input type="text" id="staffPinCode" placeholder="Kod Akses Individu (Cth: 123456)" class="login-input">
+
+<button onclick="register()" class="btn btn-save" style="margin-top: 10px;">SIMPAN IDENTITI (3 SAMPLE)</button>
+               </div>
+
+            <div class="card">
                 <h2>🔍 Carian & Arkib</h2>
                 <label style="font-size:0.7rem; color:#64748b; font-weight:700;">TARIKH PAPARAN UTAMA:</label>
                 <input type="date" id="dateFilter" class="login-input" onchange="loadAttendanceForDate()">
@@ -216,18 +233,20 @@
     import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, getDocs, where, updateDoc, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-const firebaseConfig = {
-      apiKey: "AIzaSyD834R5Au1ksM0h-G0imluipJIN1br2g2g",
-      authDomain: "panitia-5be3a.firebaseapp.com",
-      projectId: "panitia-5be3a",
-      storageBucket: "panitia-5be3a.firebasestorage.app",
-      messagingSenderId: "814796521590",
-      appId: "1:814796521590:web:c0e31fa985401bcc571f57"
+    const firebaseConfig = {
+        apiKey: "AIzaSyC4vbsw9PPdrSIwiCBg2t1XnkSo2k6aNhg",
+        authDomain: "e-hadir-ba989.firebaseapp.com",
+        projectId: "e-hadir-ba989",
+        storageBucket: "e-hadir-ba989.firebasestorage.app",
+        messagingSenderId: "777207462690",
+        appId: "1:777207462690:web:0c65d249532428bea6437b",
+        measurementId: "G-062X22JHXY"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
+    const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models/';
     const ADMIN_PIN = "1234";
 
     let allUsers = [];
@@ -238,6 +257,15 @@ const firebaseConfig = {
 
     async function initAdmin() {
         try {
+            await Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+            ]);
+            const video = document.getElementById('adminVideo');
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 400, height: 300 } });
+            video.srcObject = stream;
+            
             // --- KEMASKINI: Dapatkan tarikh ikut waktu tempatan (Malaysia), bukan UTC ---
             const now = new Date();
             const year = now.getFullYear();
@@ -253,17 +281,8 @@ const firebaseConfig = {
     }
 
     function startDataListeners() {
-        onSnapshot(collection(db, "teachers"), (snap) => {
-            allUsers = snap.docs.map(d => {
-                const raw = d.data();
-                return {
-                    id: d.id,
-                    ...raw,
-                    name: String(raw["NAMA GURU"] || raw.NAMA || raw.name || "Tanpa Nama").trim().toUpperCase(),
-                    role: String(raw.PERANAN || raw.role || "GURU").trim().toUpperCase(),
-                    accessCode: String(raw["KATA LALUAN"] || raw.accessCode || raw.PIN || "").trim()
-                };
-            });
+        onSnapshot(collection(db, "users"), (snap) => {
+            allUsers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             allUsers.sort((a, b) => a.name.localeCompare(b.name));
             loadAttendanceForDate(); 
             // Also refresh analysis if currently visible, but keeping it manual is safer
@@ -281,7 +300,7 @@ const firebaseConfig = {
         const endDate = new Date(filterDate); endDate.setHours(23, 59, 59, 999);
 
         const q = query(
-            collection(db, "teacher_attendance"), 
+            collection(db, "attendance"), 
             where("timestamp", ">=", Timestamp.fromDate(startDate)),
             where("timestamp", "<=", Timestamp.fromDate(endDate)),
             orderBy("timestamp", "desc")
@@ -322,10 +341,22 @@ function checkIsLate(timeStr, role) {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = "";
 
-        if (allUsers.length === 0) return;
+        // Akaun pentadbir tidak dipaparkan dalam jadual staf/kehadiran.
+        // Perbandingan tidak sensitif huruf besar-kecil dan ruang berlebihan.
+        const excludedAdminNames = new Set(['PENYELIA UTAMA', 'SK ABANG GESA']);
+        const displayUsers = allUsers.filter(user => {
+            const normalizedName = String(user.name || user.NAMA || user['NAMA GURU'] || '')
+                .trim().replace(/\s+/g, ' ').toUpperCase();
+            return !excludedAdminNames.has(normalizedName);
+        });
 
-        allUsers.forEach(user => {
-            if (search && !user.name.toLowerCase().includes(search)) return;
+        if (displayUsers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--muted);">Tiada rekod staf untuk dipaparkan.</td></tr>';
+        }
+
+        displayUsers.forEach(user => {
+            const userName = String(user.name || user.NAMA || user['NAMA GURU'] || '');
+            if (search && !userName.toLowerCase().includes(search)) return;
 
             const record = recordsToday.find(r => 
                 r.name.trim().toUpperCase() === user.name.trim().toUpperCase()
@@ -367,7 +398,7 @@ function checkIsLate(timeStr, role) {
             }
 
             // 💡 Neutralkan tanda petik tunggal (') pada nama seperti NUR A'LIAH
-            const safeName = user.name.replace(/'/g, "\\'");
+            const safeName = userName.replace(/'/g, "\\'");
 
             tbody.innerHTML += `
                 <tr>
@@ -387,10 +418,10 @@ function checkIsLate(timeStr, role) {
                 </tr>`;
         });
 
-        document.getElementById('statTotal').innerText = allUsers.length;
+        document.getElementById('statTotal').innerText = displayUsers.length;
         document.getElementById('statPresent').innerText = countHadir;
         document.getElementById('statLate').innerText = countLewat;
-        document.getElementById('statAbsent').innerText = allUsers.length - countHadir;
+        document.getElementById('statAbsent').innerText = displayUsers.length - countHadir;
     };
     
     window.resetKehadiranBaris = async (namaGuru) => {
@@ -405,10 +436,10 @@ function checkIsLate(timeStr, role) {
 
         try {
             const q = query(
-                collection(db, "teacher_attendance"), 
+                collection(db, "attendance"), 
                 where("timestamp", ">=", Timestamp.fromDate(startDate)), 
                 where("timestamp", "<=", Timestamp.fromDate(endDate)),
-                where("name", "==", namaGuru)
+                where("nama", "==", namaGuru)
             );
             
             const snap = await getDocs(q);
@@ -420,7 +451,7 @@ function checkIsLate(timeStr, role) {
             let count = 0;
             const deletes = [];
             snap.forEach(d => { 
-                deletes.push(deleteDoc(doc(db, "teacher_attendance", d.id))); 
+                deletes.push(deleteDoc(doc(db, "attendance", d.id))); 
                 count++; 
             });
             
@@ -451,7 +482,7 @@ function checkIsLate(timeStr, role) {
         const startDate = new Date(dateVal); startDate.setHours(0,0,0,0);
         const endDate = new Date(dateVal); endDate.setHours(23,59,59,999);
 
-        const q = query(collection(db, "teacher_attendance"), 
+        const q = query(collection(db, "attendance"), 
             where("timestamp", ">=", Timestamp.fromDate(startDate)),
             where("timestamp", "<=", Timestamp.fromDate(endDate))
         );
@@ -606,13 +637,107 @@ function checkIsLate(timeStr, role) {
     window.changeUserRole = async (id, name, currentRole) => {
         const newRole = currentRole === "GURU" ? "AKP" : "GURU";
         if(confirm(`Tukar jawatan ${name} daripada ${currentRole} kepada ${newRole}?`)) {
-            try { await updateDoc(doc(db, "teachers", id), { PERANAN: newRole }); alert("Jawatan berjaya dikemaskini."); }
-            catch(e) { alert("Ralat mengemaskini jawatan: " + e.message); }
+            try { await updateDoc(doc(db, "users", id), { role: newRole }); } 
+            catch(e) { alert("Ralat: " + e.message); }
         }
     };
 
-// Pendaftaran guru dan biometrik telah dipindahkan ke modul SAGE "Kemaskini Data Guru".
+window.register = async () => {
+        const nameInput = document.getElementById('staffName');
+        const roleInput = document.getElementById('staffRole');
+        const pinInput = document.getElementById('staffPinCode'); // Ambil elemen PIN
+        
+        const name = nameInput.value.trim().toUpperCase();
+        const role = roleInput.value; 
+        const accessCode = pinInput.value.trim(); // Ambil nilai PIN
 
+        // Semakan wajib: Nama dan PIN mesti diisi
+        if (!name) return alert("Sila masukkan nama staf!");
+        if (!accessCode) return alert("Sila tetapkan Kod Akses Individu untuk staf ini!");
+
+        const statusLabel = document.getElementById('regStatus');
+        const video = document.getElementById('adminVideo');
+        let descriptors = [];
+
+        for (let i = 1; i <= 3; i++) {
+            statusLabel.innerText = `⌛ SAMPEL ${i}/3... GERAKKAN WAJAH`;
+            statusLabel.style.color = "var(--warning)";
+            await new Promise(r => setTimeout(r, 1000));
+
+            const det = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224 }))
+                .withFaceLandmarks().withFaceDescriptor();
+
+            if (det) {
+                descriptors.push({ d: Array.from(det.descriptor) });
+            } else {
+                alert(`Sampel ${i} gagal. Cuba pastikan pencahayaan cukup.`);
+                statusLabel.innerText = "AI SEDIA";
+                return;
+            }
+        }
+
+        try {
+            const q = query(collection(db, "users"), where("name", "==", name));
+            const snap = await getDocs(q);
+            
+            if (!snap.empty) {
+                if(confirm(`Kemaskini data wajah dan Kod Akses untuk ${name}?`)) {
+                    // Masukkan accessCode ke dalam kemaskini Firebase
+                    await updateDoc(doc(db, "users", snap.docs[0].id), { descriptors, role: role, accessCode: accessCode });
+                    alert("Berjaya dikemaskini!");
+                }
+            } else {
+                // Masukkan accessCode ke dalam pendaftaran baharu Firebase
+                await addDoc(collection(db, "users"), { name, descriptors, role: role, accessCode: accessCode });
+                alert("Pendaftaran berjaya!");
+            }
+            
+            // Kosongkan semula kotak input selepas berjaya
+            nameInput.value = "";
+            pinInput.value = "";
+            
+        } catch (e) { alert("Ralat Simpan: " + e.message); }
+        
+        statusLabel.innerText = "AI SEDIA";
+        statusLabel.style.color = "var(--accent)";
+    };
+
+    // -- FUNGSI SEMENTARA: KEMASKINI PIN PUKAL --
+    window.bulkUpdatePIN = async () => {
+        // Minta pengesahan pentadbir sebelum jalankan skrip
+        if(!confirm("Adakah anda pasti mahu menetapkan PIN lalai '1122' kepada semua guru yang belum ada PIN?")) return;
+
+        const statusLabel = document.getElementById('regStatus') || document.createElement('div');
+        statusLabel.innerText = "Sistem sedang mengemaskini data... Sila tunggu.";
+        
+        try {
+            // Ambil semua data dari koleksi 'users'
+            const snap = await getDocs(collection(db, "users"));
+            let updateCount = 0;
+            
+            // Semak satu persatu dokumen guru
+            for (const userDoc of snap.docs) {
+                const data = userDoc.data();
+                
+                // Jika guru tersebut TIADA 'accessCode'
+                if (!data.accessCode) {
+                    // Kemaskini dokumen mereka dengan PIN '1122'
+                    await updateDoc(doc(db, "users", userDoc.id), {
+                        accessCode: "1122"
+                    });
+                    updateCount++;
+                }
+            }
+            
+            alert(`Selesai! Sebanyak ${updateCount} guru lama telah berjaya dikemaskini dengan PIN lalai '1122'.`);
+            statusLabel.innerText = "AI SEDIA";
+            
+        } catch (error) {
+            console.error("Ralat bulk update:", error);
+            alert("Ralat semasa mengemaskini: " + error.message);
+        }
+    };
+    
     window.clearAllAttendanceToday = async () => {
         if (!confirm("AMARAN: Padam SEMUA rekod kehadiran untuk tarikh yang dipilih?")) return;
         const pin = prompt("Sila masukkan PIN Admin untuk pengesahan:");
@@ -622,12 +747,12 @@ function checkIsLate(timeStr, role) {
         const startDate = new Date(selectedDate); startDate.setHours(0,0,0,0);
         const endDate = new Date(selectedDate); endDate.setHours(23,59,59,999);
 
-        const q = query(collection(db, "teacher_attendance"), where("timestamp", ">=", Timestamp.fromDate(startDate)), where("timestamp", "<=", Timestamp.fromDate(endDate)));
+        const q = query(collection(db, "attendance"), where("timestamp", ">=", Timestamp.fromDate(startDate)), where("timestamp", "<=", Timestamp.fromDate(endDate)));
         const snap = await getDocs(q);
         
         let count = 0;
         const deletes = [];
-        snap.forEach(d => { deletes.push(deleteDoc(doc(db, "teacher_attendance", d.id))); count++; });
+        snap.forEach(d => { deletes.push(deleteDoc(doc(db, "attendance", d.id))); count++; });
         
         await Promise.all(deletes);
         alert(`Berjaya memadam ${count} rekod.`);
@@ -661,20 +786,15 @@ function checkIsLate(timeStr, role) {
         const finalDate = new Date(dateTimeString);
 
         try {
-            await addDoc(collection(db, "teacher_attendance"), { name: name.toUpperCase(), status: status, timestamp: Timestamp.fromDate(finalDate) });
+            await addDoc(collection(db, "attendance"), { name: name.toUpperCase(), status: status, timestamp: Timestamp.fromDate(finalDate) });
             alert(`Rekod disimpan: ${status}`);
             closeModal('pinModal');
         } catch(e) { alert("Ralat Simpan: " + e.message); }
     }
 
-    window.confirmDeleteUser = async (id, name) => {
-        if (prompt(`Taip 'PADAM' untuk memadam rekod guru ${name} daripada koleksi teachers. Rekod kehadiran lampau tidak dipadam. Taip PADAM untuk meneruskan:`) !== 'PADAM') return;
-        try {
-            await deleteDoc(doc(db, "teachers", id));
-            alert("Rekod guru berjaya dipadam daripada master data.");
-        } catch (error) {
-            console.error(error);
-            alert("Gagal memadam guru: " + error.message);
+    window.confirmDeleteUser = (id, name) => {
+        if (prompt(`Taip 'PADAM' untuk buang guru ${name}:`) === 'PADAM') {
+            deleteDoc(doc(db, "users", id)).then(() => alert("Staf dipadam."));
         }
     };
 
@@ -712,7 +832,7 @@ async function renderCalendarAsync() {
     try {
         // 2. Tarik semua data kehadiran dalam lingkungan bulan tersebut sahaja
         const q = query(
-            collection(db, "teacher_attendance"),
+            collection(db, "attendance"),
             where("timestamp", ">=", Timestamp.fromDate(startDate)),
             where("timestamp", "<=", Timestamp.fromDate(endDate))
         );
