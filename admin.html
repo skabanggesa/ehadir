@@ -317,14 +317,27 @@ function checkIsLate(timeStr, role) {
         const search = document.getElementById('searchName').value.toLowerCase();
         
         const recordsToday = currentAttendance[filterDate] || [];
-        
+
+        // Nama yang tidak dipaparkan dalam jadual kehadiran utama.
+        // Penapisan ini hanya mengubah paparan; data Firebase tidak dipadam.
+        const excludedTableNames = new Set(['PENYELIA UTAMA', 'SK ABANG GESA']);
+        const tableUsers = allUsers.filter(user =>
+            !excludedTableNames.has(String(user.name || '').trim().toUpperCase())
+        );
+
         let countHadir = 0, countLewat = 0;
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = "";
 
-        if (allUsers.length === 0) return;
+        if (tableUsers.length === 0) {
+            document.getElementById('statTotal').innerText = 0;
+            document.getElementById('statPresent').innerText = 0;
+            document.getElementById('statLate').innerText = 0;
+            document.getElementById('statAbsent').innerText = 0;
+            return;
+        }
 
-        allUsers.forEach(user => {
+        tableUsers.forEach(user => {
             if (search && !user.name.toLowerCase().includes(search)) return;
 
             const record = recordsToday.find(r => 
@@ -387,10 +400,10 @@ function checkIsLate(timeStr, role) {
                 </tr>`;
         });
 
-        document.getElementById('statTotal').innerText = allUsers.length;
+        document.getElementById('statTotal').innerText = tableUsers.length;
         document.getElementById('statPresent').innerText = countHadir;
         document.getElementById('statLate').innerText = countLewat;
-        document.getElementById('statAbsent').innerText = allUsers.length - countHadir;
+        document.getElementById('statAbsent').innerText = tableUsers.length - countHadir;
     };
     
     window.resetKehadiranBaris = async (namaGuru) => {
