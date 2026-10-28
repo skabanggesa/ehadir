@@ -239,13 +239,12 @@
         import { getFirestore, collection, getDocs, query, where, Timestamp, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyC4vbsw9PPdrSIwiCBg2t1XnkSo2k6aNhg",
-            authDomain: "e-hadir-ba989.firebaseapp.com",
-            projectId: "e-hadir-ba989",
-            storageBucket: "e-hadir-ba989.firebasestorage.app",
-            messagingSenderId: "777207462690",
-            appId: "1:777207462690:web:0c65d249532428bea6437b",
-            measurementId: "G-062X22JHXY"
+            apiKey: "AIzaSyD834R5Au1ksM0h-G0imluipJIN1br2g2g",
+            authDomain: "panitia-5be3a.firebaseapp.com",
+            projectId: "panitia-5be3a",
+            storageBucket: "panitia-5be3a.firebasestorage.app",
+            messagingSenderId: "814796521590",
+            appId: "1:814796521590:web:c0e31fa985401bcc571f57"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -283,8 +282,17 @@
             try {
                 // 1. Dapatkan semua nama pengguna (staf)
                 if (usersList.length === 0) {
-                    const uSnap = await getDocs(collection(db, "users"));
-                    usersList = uSnap.docs.map(d => d.data().name).sort();
+                    // Senarai staf kini datang daripada koleksi teachers dalam panitia-5be3a.
+                    // Sokong variasi nama medan yang digunakan oleh rekod guru.
+                    const uSnap = await getDocs(collection(db, "teachers"));
+                    const names = uSnap.docs
+                        .map(d => {
+                            const data = d.data() || {};
+                            return data["NAMA GURU"] || data.NAMA || data.name || data.nama || "";
+                        })
+                        .map(name => String(name).trim())
+                        .filter(Boolean);
+                    usersList = [...new Set(names)].sort((a, b) => a.localeCompare(b, "ms"));
                 }
 
                 // 2. Dapatkan rekod kehadiran untuk bulan tersebut sahaja
@@ -292,7 +300,7 @@
                 const endDate = new Date(currentYear, currentMonth, 0, 23, 59, 59); // Hari terakhir
 
                 const q = query(
-                    collection(db, "attendance"),
+                    collection(db, "teacher_attendance"),
                     where("timestamp", ">=", Timestamp.fromDate(startDate)),
                     where("timestamp", "<=", Timestamp.fromDate(endDate))
                 );
@@ -499,7 +507,7 @@
 
             try {
                 if (editTarget.docId) {
-                    await updateDoc(doc(db, "attendance", editTarget.docId), {
+                    await updateDoc(doc(db, "teacher_attendance", editTarget.docId), {
                         status: newStatus,
                         locationLink:""
                     });
@@ -507,7 +515,7 @@
                     const [y, m, d] = editTarget.dateStr.split('-');
                     const manualDate = new Date(Number(y), Number(m)-1, Number(d), 8, 0, 0);
 
-                    await addDoc(collection(db, "attendance"), {
+                    await addDoc(collection(db, "teacher_attendance"), {
                         name: editTarget.name,
                         status: newStatus,
                         timestamp: Timestamp.fromDate(manualDate),
@@ -535,7 +543,7 @@
             document.getElementById('loadingMsg').style.display = "block";
 
             try {
-                await deleteDoc(doc(db, "attendance", editTarget.docId));
+                await deleteDoc(doc(db, "teacher_attendance", editTarget.docId));
                 await loadReport();
             } catch (error) {
                 alert("Ralat memadam: " + error.message);
