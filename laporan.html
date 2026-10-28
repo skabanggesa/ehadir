@@ -291,7 +291,8 @@
                             return data["NAMA GURU"] || data.NAMA || data.name || data.nama || "";
                         })
                         .map(name => String(name).trim())
-                        .filter(Boolean);
+                        // Abaikan akaun bukan guru yang tidak patut muncul dalam laporan.
+                        .filter(name => name && !["PENYELIA UTAMA", "SK ABANG GESA"].includes(name.toLocaleUpperCase("ms")));
                     usersList = [...new Set(names)].sort((a, b) => a.localeCompare(b, "ms"));
                 }
 
