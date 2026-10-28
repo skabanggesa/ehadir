@@ -1,367 +1,317 @@
 <!DOCTYPE html>
 <html lang="ms">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Hadir | Tugas Luar (Face ID & GPS)</title>
-    
-    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
-
-    <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background: #f8fafc;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            text-align: center;
-        }
-        .container {
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            width: 90%;
-            max-width: 400px;
-        }
-        h2 { margin-top: 0; color: #0f172a; font-weight: 800; }
-        video {
-            width: 100%;
-            border-radius: 12px;
-            background: #000;
-            transform: scaleX(-1);
-            margin-bottom: 15px;
-        }
-        .status-box {
-            background: #e2e8f0;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #334155;
-            margin-bottom: 15px;
-            transition: 0.3s;
-        }
-        .btn {
-            background: #2563eb;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 10px;
-            font-weight: 700;
-            cursor: pointer;
-            width: 100%;
-            font-size: 1rem;
-            display: none;
-        }
-        .btn:active { transform: scale(0.98); }
-        
-        /* Gaya untuk Fallback Manual PIN */
-        .login-input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 10px;
-            border: 1px solid #cbd5e1;
-            border-radius: 10px;
-            box-sizing: border-box;
-            font-family: inherit;
-        }
-        #fallbackSection, #confirmSection { display: none; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f172a">
+<title>SAGE | Rekod Ketidakhadiran Guru</title>
+<script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0f172a;--blue:#2563eb;--cyan:#06b6d4;--muted:#64748b;--line:#e2e8f0;--surface:#f8fafc;--green:#047857;--red:#b91c1c;--amber:#92400e}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;padding:24px 14px;display:flex;align-items:center;justify-content:center;font-family:'Plus Jakarta Sans',sans-serif;color:var(--navy);background:radial-gradient(circle at 10% 10%,#dbeafe 0,transparent 32%),radial-gradient(circle at 90% 90%,#cffafe 0,transparent 30%),#f1f5f9}
+.shell{width:100%;max-width:490px;background:rgba(255,255,255,.96);border:1px solid rgba(255,255,255,.9);border-radius:28px;overflow:hidden;box-shadow:0 24px 70px rgba(15,23,42,.14)}
+.hero{padding:26px 26px 22px;background:linear-gradient(135deg,#0f172a,#1e40af 68%,#0891b2);color:white;text-align:left;position:relative;overflow:hidden}.hero:after{content:"";position:absolute;width:180px;height:180px;border:1px solid #ffffff25;border-radius:50%;right:-55px;top:-75px;box-shadow:0 0 0 22px #ffffff0c,0 0 0 44px #ffffff08}.brand{display:flex;align-items:center;gap:12px;position:relative;z-index:1}.brand-icon{height:48px;width:48px;border-radius:16px;display:grid;place-items:center;background:#ffffff1c;border:1px solid #ffffff35;font-size:24px}.eyebrow{font-size:11px;letter-spacing:1.7px;text-transform:uppercase;color:#bfdbfe;font-weight:800}.hero h1{font-size:23px;line-height:1.25;margin:5px 0 0;font-weight:800}.hero p{font-size:12px;line-height:1.6;color:#dbeafe;margin:16px 0 0;max-width:330px;position:relative;z-index:1}
+.content{padding:22px;display:flex;flex-direction:column;gap:16px}.field-label{display:block;font-size:12px;font-weight:800;margin-bottom:8px;color:#334155}.select-wrap{position:relative}.select-wrap:after{content:'⌄';position:absolute;right:15px;top:12px;color:#475569;pointer-events:none;font-size:18px}.input{width:100%;appearance:none;background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:14px 15px;font:600 14px 'Plus Jakarta Sans',sans-serif;color:var(--navy);outline:none;transition:.2s}.input:focus{border-color:#3b82f6;box-shadow:0 0 0 4px #3b82f61a}.hint{font-size:11px;line-height:1.55;color:var(--muted);margin:8px 2px 0}.camera-card{background:#0b1220;border-radius:20px;padding:8px;position:relative;overflow:hidden}.camera-top{display:flex;align-items:center;justify-content:space-between;padding:7px 7px 11px;color:#cbd5e1;font-size:11px;font-weight:700}.live-dot{display:inline-block;width:7px;height:7px;background:#64748b;border-radius:50%;margin-right:6px}.live-dot.active{background:#34d399;box-shadow:0 0 0 4px #34d39920}.video-wrap{position:relative;border-radius:14px;overflow:hidden;background:linear-gradient(135deg,#1e293b,#020617);aspect-ratio:4/3;display:grid;place-items:center}.video-wrap video{display:block;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}.camera-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;color:#94a3b8;text-align:center;padding:20px;font-size:12px;line-height:1.5}.camera-placeholder .face-icon{font-size:34px}.camera-foot{padding:10px 6px 4px;color:#94a3b8;font-size:10px;display:flex;justify-content:space-between;gap:8px}.status{display:flex;align-items:flex-start;gap:10px;border-radius:14px;padding:13px 14px;background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;font-size:12px;font-weight:600;line-height:1.55}.status-icon{font-size:16px;line-height:1.2}.status.success{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}.status.error{background:#fef2f2;color:#991b1b;border-color:#fecaca}.status.info{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}.status.warn{background:#fffbeb;color:#92400e;border-color:#fde68a}.confirm{display:none;border:1px solid #bfdbfe;background:#eff6ff;border-radius:16px;padding:16px;text-align:center}.confirm small{color:#1d4ed8;font-size:11px;font-weight:700}.confirm h2{font-size:18px;margin:8px 0;color:#1e3a8a;overflow-wrap:anywhere}.confirm p{font-size:11px;color:#475569;margin:0 0 14px}.actions{display:flex;gap:9px}.btn{border:0;border-radius:12px;padding:13px 15px;font:800 12px 'Plus Jakarta Sans',sans-serif;cursor:pointer;transition:transform .15s,opacity .15s}.btn:active{transform:scale(.98)}.btn:disabled{opacity:.5;cursor:not-allowed}.btn-primary{background:linear-gradient(135deg,#2563eb,#0891b2);color:white;box-shadow:0 7px 16px #2563eb25}.btn-yes{flex:1;background:#059669;color:white}.btn-no{flex:1;background:#fee2e2;color:#991b1b}.btn-manual{width:100%;background:#f59e0b;color:#422006;margin-top:8px}.manual{display:none;padding:15px;border:1px solid #fde68a;background:#fffbeb;border-radius:16px}.manual h3{font-size:13px;margin:0 0 6px}.manual p{font-size:11px;color:#92400e;line-height:1.5;margin:0 0 12px}.manual .input{margin-bottom:9px}.footer{text-align:center;padding:0 22px 22px;font-size:10px;color:#94a3b8}.hidden{display:none!important}@media(max-width:380px){.content{padding:16px}.hero{padding:22px}.hero h1{font-size:21px}.actions{flex-direction:column}}
+</style>
 </head>
 <body>
+<main class="shell">
+  <header class="hero"><div class="brand"><div class="brand-icon">📍</div><div><div class="eyebrow">SAGE · E-HADIR</div><h1>Rekod Ketidakhadiran Guru</h1></div></div><p>Pilih sebab ketidakhadiran terlebih dahulu. Pengimbas wajah akan bermula secara automatik selepas pilihan dibuat.</p></header>
+  <section class="content">
+    <div><label class="field-label" for="statusPilihan">SEBAB KETIDAKHADIRAN</label><div class="select-wrap"><select id="statusPilihan" class="input" required><option value="">— Pilih sebab ketidakhadiran —</option><option value="Tugas Luar">Tugas Luar</option><option value="Cuti Rehat Khas">Cuti Rehat Khas (CRK)</option><option value="Cuti Rehat">Cuti Rehat (CR)</option></select></div><p class="hint">Pilihan ini mesti dibuat sebelum kamera mengaktifkan pengesanan wajah.</p></div>
+    <div class="camera-card"><div class="camera-top"><span><i id="liveDot" class="live-dot"></i><span id="cameraLabel">KAMERA BELUM DIAKTIFKAN</span></span><span>FACE ID</span></div><div class="video-wrap"><video id="video" autoplay muted playsinline class="hidden"></video><div id="cameraPlaceholder" class="camera-placeholder"><div class="face-icon">◉</div><strong>Pilih sebab ketidakhadiran</strong><span>Kamera akan diaktifkan secara automatik selepas pilihan dibuat.</span></div></div><div class="camera-foot"><span id="cameraFootLeft">Kamera menunggu pilihan anda</span><span>GPS diperlukan</span></div></div>
+    <div id="statusText" class="status"><span class="status-icon">ℹ️</span><span id="statusMessage">Sila pilih sebab ketidakhadiran untuk memulakan sistem.</span></div>
+    <div id="confirmSection" class="confirm"><small>IDENTITI DIKESAN</small><h2 id="confirmNameText"></h2><p>Adakah nama ini betul? Sahkan untuk meneruskan rekod.</p><div class="actions"><button id="yesBtn" class="btn btn-yes" type="button" onclick="sahkanYa()">✓ Ya, Betul</button><button id="noBtn" class="btn btn-no" type="button" onclick="sahkanBukan()">✕ Bukan Saya</button></div></div>
+    <div id="fallbackSection" class="manual"><h3>Mod Pengesahan Manual</h3><p>Wajah tidak berjaya dikenal pasti selepas dua percubaan. Pilih nama dan masukkan kod akses untuk meneruskan.</p><label class="field-label" for="fallbackName">Nama guru</label><div class="select-wrap"><select id="fallbackName" class="input"><option value="">— Pilih nama anda —</option></select></div><label class="field-label" for="fallbackPin">Kod akses (PIN)</label><input type="password" id="fallbackPin" class="input" placeholder="Masukkan PIN" inputmode="numeric" autocomplete="off"><button id="pinBtn" class="btn btn-manual" type="button" onclick="prosesDenganPIN()">Sahkan PIN & Hantar</button></div>
+  </section><footer class="footer">Rekod disimpan ke sistem kehadiran guru SAGE. Pastikan nama dan sebab yang dipilih tepat.</footer>
+</main>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, getDocs, addDoc, serverTimestamp, query, where, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    <div class="container">
-        <h2>📍 Rekod Luar</h2>
-        
-        <select id="statusPilihan" class="login-input" style="margin-bottom: 15px; font-weight: 700; color: #0f172a; font-size: 1rem; text-align: center;">
-            <option value="Tugas Luar">Tugas Luar</option>
-            <option value="Cuti Rehat Khas">Cuti Rehat Khas (CRK)</option>
-            <option value="Cuti Rehat">Cuti Rehat (CR)</option>
-        </select>
-        
-        <video id="video" autoplay muted playsinline></video>
-        
-        <div id="confirmSection" style="margin-bottom: 15px;">
-            <p id="confirmNameText" style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 10px 0;"></p>
-            <p style="font-size: 0.85rem; color: #64748b; margin-top: 0; margin-bottom: 15px;">Adakah wajah/nama ini tepat?</p>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn" style="background:#10b981; display:block; flex:1;" onclick="sahkanYa()">Ya, Betul</button>
-                <button class="btn" style="background:#ef4444; display:block; flex:1;" onclick="sahkanBukan()">Bukan</button>
-            </div>
-        </div>
+const firebaseConfig = {
+  apiKey: "AIzaSyC4vbsw9PPdrSIwiCBg2t1XnkSo2k6aNhg",
+  authDomain: "panitia-5be3a.firebaseapp.com",
+  projectId: "panitia-5be3a",
+  storageBucket: "panitia-5be3a.firebasestorage.app",
+  messagingSenderId: "777207462690",
+  appId: "1:777207462690:web:0c65d249532428bea6437b"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models/';
+const statusSelect = document.getElementById('statusPilihan');
+const statusText = document.getElementById('statusText');
+const statusMessage = document.getElementById('statusMessage');
+const video = document.getElementById('video');
+const cameraPlaceholder = document.getElementById('cameraPlaceholder');
+const cameraLabel = document.getElementById('cameraLabel');
+const cameraFootLeft = document.getElementById('cameraFootLeft');
+const liveDot = document.getElementById('liveDot');
+const confirmSection = document.getElementById('confirmSection');
+const fallbackSection = document.getElementById('fallbackSection');
+const fallbackNameSelect = document.getElementById('fallbackName');
+const pinInput = document.getElementById('fallbackPin');
+const yesBtn = document.getElementById('yesBtn');
+const noBtn = document.getElementById('noBtn');
+const pinBtn = document.getElementById('pinBtn');
 
-        <div id="fallbackSection">
-            <p style="font-size: 0.8rem; color: #b91c1c; font-weight: 700; margin-top: 0;">AI Gagal Mengecam. Sila guna Mod Manual.</p>
-            <select id="fallbackName" class="login-input">
-                <option value="">-- Pilih Nama Anda --</option>
-            </select>
-            <input type="password" id="fallbackPin" class="login-input" placeholder="Kod Akses (PIN)" style="text-align:center; letter-spacing:3px; font-size:1.2rem;">
-            <button class="btn" style="background:#f59e0b; display:block; margin-top:10px;" onclick="prosesDenganPIN()">Sahkan PIN & Hantar</button>
-        </div>
+let labeledDescriptors = [];
+let allUsersData = [];
+let failCount = 0;
+let tempDetectedName = '';
+let stream = null;
+let scannerActive = false;
+let detectionBusy = false;
+let processing = false;
+let modelsReady = false;
+let usersReady = false;
+let cameraStarting = false;
 
-        <div id="statusText" class="status-box">Sistem sedang dimuatkan...</div>
-        <button id="scanBtn" class="btn" onclick="prosesKehadiranLuar()">Imbas Wajah</button>
-    </div>
+function setStatus(message, type='') {
+  statusMessage.textContent = message;
+  statusText.className = 'status' + (type ? ' ' + type : '');
+}
+function stopCamera() {
+  scannerActive = false;
+  if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; }
+  video.srcObject = null;
+  video.classList.add('hidden');
+  liveDot.classList.remove('active');
+  cameraLabel.textContent = 'KAMERA TIDAK AKTIF';
+}
+function descriptorValues(item) {
+  let value = item;
+  if (item && !Array.isArray(item) && item.d !== undefined) value = item.d;
+  if (value && !Array.isArray(value) && typeof value === 'object') {
+    const keys = Object.keys(value).sort((a,b) => Number(a)-Number(b));
+    value = keys.map(k => value[k]);
+  }
+  if (!Array.isArray(value) && !(value instanceof Float32Array)) return null;
+  const arr = Array.from(value, Number);
+  return arr.length === 128 && arr.every(Number.isFinite) ? new Float32Array(arr) : null;
+}
+function getTeacherDescriptors(data) {
+  const raw = data?.biometricData?.descriptors ?? data?.descriptors ?? [];
+  if (!Array.isArray(raw)) return [];
+  return raw.map(descriptorValues).filter(Boolean);
+}
+function teacherName(data) {
+  return String(data['NAMA GURU'] || data.NAMA || data.name || data.nama || '').trim();
+}
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, addDoc, serverTimestamp, query, where, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+async function loadModelsAndTeachers() {
+  setStatus('Memuatkan enjin pengecaman wajah dan data guru…');
+  try {
+    await Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+    ]);
+    modelsReady = true;
+    setStatus('Memuatkan senarai guru dan data biometrik…');
+    const snap = await getDocs(collection(db, 'teachers'));
+    const byName = new Map();
+    snap.forEach(docSnap => {
+      const data = docSnap.data() || {};
+      const name = teacherName(data);
+      if (!name) return;
+      const accessCode = String(data.accessCode || data.ACCESS_CODE || data['KOD AKSES'] || '');
+      const descriptors = getTeacherDescriptors(data);
+      const existing = byName.get(name);
+      if (!existing) byName.set(name, { name, accessCode, descriptors });
+      else { if (!existing.accessCode && accessCode) existing.accessCode = accessCode; existing.descriptors.push(...descriptors); }
+    });
+    allUsersData = [...byName.values()].sort((a,b) => a.name.localeCompare(b.name, 'ms'));
+    labeledDescriptors = allUsersData.filter(u => u.descriptors.length).map(u => new faceapi.LabeledFaceDescriptors(u.name, u.descriptors));
+    allUsersData.forEach(u => { const opt=document.createElement('option'); opt.value=u.name; opt.textContent=u.name; fallbackNameSelect.appendChild(opt); });
+    usersReady = true;
+    setStatus(`Sistem sedia. ${allUsersData.length} guru dimuatkan. Pilih sebab ketidakhadiran untuk mengaktifkan kamera.`, 'success');
+  } catch (error) {
+    console.error(error);
+    setStatus('Tidak dapat memuatkan sistem: ' + error.message + '. Semak sambungan internet dan akses Firestore.', 'error');
+  }
+}
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyC4vbsw9PPdrSIwiCBg2t1XnkSo2k6aNhg",
-            authDomain: "e-hadir-ba989.firebaseapp.com",
-            projectId: "e-hadir-ba989",
-            storageBucket: "e-hadir-ba989.firebasestorage.app",
-            messagingSenderId: "777207462690",
-            appId: "1:777207462690:web:0c65d249532428bea6437b",
-            measurementId: "G-062X22JHXY"
-        };
+async function startCameraAndScanner() {
+  if (!statusSelect.value) { setStatus('Sila pilih sebab ketidakhadiran terlebih dahulu.'); return; }
+  if (cameraStarting || processing) return;
+  if (!modelsReady || !usersReady) { setStatus('Sistem masih dimuatkan. Sila tunggu sebentar.', 'warn'); return; }
+  if (labeledDescriptors.length === 0) { fallbackSection.style.display='block'; setStatus('Tiada data biometrik wajah yang sah dalam koleksi teachers. Gunakan pengesahan PIN atau semak data biometrik guru.', 'warn'); return; }
+  cameraStarting = true;
+  stopCamera();
+  confirmSection.style.display='none'; fallbackSection.style.display='none';
+  cameraPlaceholder.innerHTML='<div class="face-icon">◌</div><strong>Mengaktifkan kamera…</strong><span>Benarkan akses kamera apabila diminta oleh pelayar.</span>';
+  cameraPlaceholder.classList.remove('hidden');
+  setStatus('Mengaktifkan kamera untuk ' + statusSelect.value + '…', 'info');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+    video.srcObject = stream;
+    video.classList.remove('hidden');
+    await new Promise((resolve, reject) => {
+      if (video.readyState >= 2) return resolve();
+      video.onloadedmetadata = () => resolve();
+      video.onerror = () => reject(new Error('Video kamera tidak dapat dimulakan.'));
+    });
+    await video.play();
+    cameraPlaceholder.classList.add('hidden');
+    cameraLabel.textContent='PENGESANAN AUTOMATIK AKTIF';
+    cameraFootLeft.textContent='Pandang kamera dan kekal diam';
+    liveDot.classList.add('active');
+    failCount=0; scannerActive=true;
+    setStatus('Kamera aktif. Mengesan wajah secara automatik…', 'success');
+    scanLoop();
+  } catch (error) {
+    console.error(error);
+    stopCamera();
+    cameraPlaceholder.innerHTML='<div class="face-icon">📷</div><strong>Kamera tidak dapat diaktifkan</strong><span>Semak kebenaran kamera dan pastikan laman dibuka melalui HTTPS.</span>';
+    cameraPlaceholder.classList.remove('hidden');
+    setStatus('Ralat kamera: ' + error.message, 'error');
+  } finally { cameraStarting=false; }
+}
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models/';
+async function scanLoop() {
+  if (!scannerActive || detectionBusy || processing) return;
+  if (!video.videoWidth || !video.videoHeight) { setTimeout(scanLoop, 500); return; }
+  detectionBusy=true;
+  try {
+    const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 })).withFaceLandmarks().withFaceDescriptor();
+    if (!scannerActive || processing) return;
+    if (!detection) {
+      // Jangan kira setiap bingkai kosong sebagai satu percubaan gagal. Kira kegagalan hanya apabila pengguna memulakan sesi imbasan dan sistem benar-benar menemui wajah yang tidak sepadan.
+      setStatus('Mencari wajah… Pastikan wajah berada di tengah kamera dan pencahayaan mencukupi.', 'info');
+      return;
+    }
+    const match = new faceapi.FaceMatcher(labeledDescriptors, 0.45).findBestMatch(detection.descriptor);
+    if (match.label === 'unknown') {
+      failCount++;
+      if (failCount >= 2) activateManual('Wajah tidak dapat dipadankan selepas dua pengesanan. Sila sahkan menggunakan PIN.');
+      else setStatus('Wajah belum dapat dikenal pasti. Laraskan kedudukan dan pandang kamera sekali lagi.', 'warn');
+      return;
+    }
+    tempDetectedName=match.label;
+    scannerActive=false;
+    confirmSection.style.display='block';
+    document.getElementById('confirmNameText').textContent=tempDetectedName;
+    setStatus('Wajah dikenal pasti. Sila sahkan nama sebelum rekod dihantar.', 'info');
+  } catch (error) {
+    console.error(error);
+    setStatus('Ralat semasa pengesanan wajah: ' + error.message, 'error');
+  } finally {
+    detectionBusy=false;
+    if (scannerActive && !processing) setTimeout(scanLoop, 650);
+  }
+}
+function activateManual(message) {
+  scannerActive=false;
+  confirmSection.style.display='none';
+  stopCamera();
+  cameraPlaceholder.innerHTML='<div class="face-icon">🔐</div><strong>Mod pengesahan manual</strong><span>Pilih nama dan masukkan PIN akses anda.</span>';
+  cameraPlaceholder.classList.remove('hidden');
+  fallbackSection.style.display='block';
+  setStatus(message, 'warn');
+}
+window.sahkanBukan = () => {
+  confirmSection.style.display='none';
+  failCount++;
+  if (failCount >= 2) { activateManual('Padanan wajah ditolak. Gunakan pengesahan manual dengan PIN.'); return; }
+  setStatus('Padanan ditolak. Kamera akan menyambung pengesanan automatik.', 'warn');
+  scannerActive=true;
+  scanLoop();
+};
+window.sahkanYa = async () => {
+  if (!tempDetectedName || processing) return;
+  confirmSection.style.display='none';
+  stopCamera();
+  await getGPSAndSave(tempDetectedName);
+};
+window.prosesDenganPIN = async () => {
+  const name=fallbackNameSelect.value;
+  const pin=pinInput.value.trim();
+  if (!name) { setStatus('Sila pilih nama guru.', 'warn'); return; }
+  if (!pin) { setStatus('Sila masukkan kod akses (PIN).', 'warn'); return; }
+  const user=allUsersData.find(u=>u.name===name);
+  if (!user || !user.accessCode || user.accessCode !== pin) {
+    pinInput.value='';
+    setStatus('PIN tidak tepat atau kod akses belum tersedia bagi akaun ini.', 'error');
+    return;
+  }
+  await getGPSAndSave(name);
+};
 
-        let labeledDescriptors = [];
-        let allUsersData = []; 
-        let failCount = 0; 
-        let tempDetectedName = ""; // Simpan nama sementara menunggu pengesahan
-
-        const statusText = document.getElementById("statusText");
-        const scanBtn = document.getElementById("scanBtn");
-        const video = document.getElementById("video");
-        const fallbackSection = document.getElementById("fallbackSection");
-        const confirmSection = document.getElementById("confirmSection");
-        const fallbackNameSelect = document.getElementById("fallbackName");
-
-        // 1. Muatkan Model AI, Data Wajah, dan Kamera
-        async function initSystem() {
-            try {
-                statusText.innerText = "Memuatkan Enjin AI...";
-                await Promise.all([
-                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-                ]);
-
-                statusText.innerText = "Memuatkan Data Staf...";
-                const querySnapshot = await getDocs(collection(db, "users"));
-                
-                querySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    if (data.name) {
-                        allUsersData.push({ name: data.name, accessCode: data.accessCode || "" });
-                    }
-                    if (data.descriptors && data.descriptors.length > 0) {
-                        const descs = data.descriptors.map(d => new Float32Array(Object.values(d.d)));
-                        labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(data.name, descs));
-                    }
-                });
-
-                allUsersData.sort((a,b) => a.name.localeCompare(b.name)).forEach(u => {
-                    const opt = document.createElement("option");
-                    opt.value = u.name;
-                    opt.text = u.name;
-                    fallbackNameSelect.appendChild(opt);
-                });
-
-                statusText.innerText = "Menghidupkan Kamera...";
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-                video.srcObject = stream;
-                
-                statusText.innerText = "AI Sedia. Sila pandang kamera.";
-                statusText.style.background = "#d1fae5";
-                statusText.style.color = "#065f46";
-                scanBtn.style.display = "block";
-            } catch (error) {
-                statusText.innerText = "Ralat: " + error.message;
-                statusText.style.background = "#fee2e2";
-                statusText.style.color = "#991b1b";
-            }
-        }
-
-        // 2. Imbas Wajah 
-        window.prosesKehadiranLuar = async () => {
-            if (labeledDescriptors.length === 0) return alert("Tiada data wajah di dalam sistem!");
-
-            statusText.innerText = "Mengecam Wajah... Sila kekal diam.";
-            statusText.style.background = "#fef3c7";
-            statusText.style.color = "#92400e";
-            scanBtn.disabled = true;
-
-            const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
-
-            // Jika wajah tiada
-            if (!detection) {
-                handleKesanGagal("Wajah tidak dijumpai. Pastikan pencahayaan terang.");
-                return;
-            }
-
-            const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45);
-            const match = faceMatcher.findBestMatch(detection.descriptor);
-
-            // Jika wajah langsung tidak dikenali oleh AI
-            if (match.label === "unknown") {
-                handleKesanGagal("Wajah tidak dikenali oleh sistem.");
-                return;
-            }
-
-            // Jika AI teka wajah tersebut
-            tempDetectedName = match.label;
-            
-            // Sorok butang imbas, tunjuk bahagian pengesahan
-            scanBtn.style.display = "none";
-            statusText.innerText = "Sila sahkan identiti anda di bawah.";
-            statusText.style.background = "#e0f2fe";
-            statusText.style.color = "#0369a1";
-            
-            document.getElementById("confirmNameText").innerText = tempDetectedName;
-            confirmSection.style.display = "block";
-        };
-
-        // --- Logik Pengesahan (Ya / Bukan) ---
-        window.sahkanYa = () => {
-            confirmSection.style.display = "none";
-            failCount = 0; // Reset balik jika berjaya
-            
-            // TAMBAHAN BARU: Matikan kamera untuk melancarkan GPS & Firebase
-            if (video.srcObject) {
-                video.srcObject.getTracks().forEach(track => track.stop());
-                video.style.display = "none"; // Sembunyikan video
-            }
-
-            dapatkanGPSdanSimpan(tempDetectedName);
-        };
-
-        window.sahkanBukan = () => {
-            confirmSection.style.display = "none";
-            handleKesanGagal("Anda menolak padanan wajah.");
-        };
-
-        // --- Fungsi Urus Kegagalan ---
-        function handleKesanGagal(mesej) {
-            failCount++;
-            if (failCount >= 2) {
-                // Gagal 2 kali -> Hentikan video, minta PIN
-                video.srcObject.getTracks().forEach(track => track.stop()); 
-                video.style.display = "none";
-                scanBtn.style.display = "none";
-                confirmSection.style.display = "none";
-                fallbackSection.style.display = "block";
-                
-                statusText.innerText = "Mod manual diaktifkan kerana imbasan gagal 2 kali.";
-                statusText.style.background = "#fee2e2";
-                statusText.style.color = "#991b1b";
-            } else {
-                // Baru gagal 1 kali -> Beri peluang imbas semula
-                statusText.innerText = `${mesej} (Percubaan ${failCount}/2). Sila imbas semula.`;
-                statusText.style.background = "#fee2e2";
-                statusText.style.color = "#991b1b";
-                scanBtn.style.display = "block";
-                scanBtn.disabled = false;
-            }
-        }
-
-        // 3. Proses Guna PIN Manual
-        window.prosesDenganPIN = () => {
-            const selectedName = fallbackNameSelect.value;
-            const enteredPin = document.getElementById("fallbackPin").value.trim();
-
-            if (!selectedName) return alert("Sila pilih nama anda!");
-            if (!enteredPin) return alert("Sila masukkan Kod Akses!");
-
-            const user = allUsersData.find(u => u.name === selectedName);
-
-            if (!user || user.accessCode !== enteredPin) {
-                alert("Kod Akses SALAH! Sila cuba lagi.");
-                document.getElementById("fallbackPin").value = ""; 
-                return;
-            }
-
-            document.querySelector("#fallbackSection button").style.display = "none";
-            dapatkanGPSdanSimpan(selectedName);
-        };
-
-// 4. Tarik GPS & Simpan 
-        async function dapatkanGPSdanSimpan(namaGuru) {
-            // AMBIL NILAI DARI DROPDOWN
-            const statusSemasa = document.getElementById("statusPilihan").value;
-
-            statusText.innerText = `Identiti Disahkan: ${namaGuru}. Mengesan Lokasi GPS...`;
-            statusText.style.background = "#e0f2fe";
-            statusText.style.color = "#0369a1";
-
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(async (position) => {
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-                    
-                    // (Saya tolong betulkan sedikit typo pada link asal cikgu supaya map lebih tepat)
-                    const mapLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
-
-                    try {
-                        // ==========================================
-                        // SEMAKAN PENDUAAN (DOUBLE ENTRY CHECK)
-                        // ==========================================
-                        const startDate = new Date(); startDate.setHours(0,0,0,0);
-                        const endDate = new Date(); endDate.setHours(23,59,59,999);
-
-                        // Tanya Firebase: Ada tak rekod nama ini pada hari ini?
-                        const q = query(
-                            collection(db, "attendance"),
-                            where("timestamp", ">=", Timestamp.fromDate(startDate)),
-                            where("timestamp", "<=", Timestamp.fromDate(endDate)),
-                            where("name", "==", namaGuru) // Cari guna 'name'
-                        );
-
-                        const snap = await getDocs(q);
-
-                        // JIKA REKOD SUDAH ADA -> Sekat!
-                        if (!snap.empty) {
-                            const rekodLama = snap.docs[0].data();
-                            let masaLama = "awal hari ini";
-                            if (rekodLama.timestamp) {
-                                masaLama = rekodLama.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-                            }
-                            
-                            alert(`MAAF: Anda telah pun merekodkan kehadiran pada hari ini jam ${masaLama}.\nUntuk mengelakkan pertindihan data, imbasan ini dibatalkan.`);
-                            statusText.innerText = "Rekod telah wujud. Sila tutup tetingkap ini.";
-                            statusText.style.background = "#fee2e2";
-                            statusText.style.color = "#991b1b";
-                            return; // Berhenti di sini, jangan hantar data!
-                        }
-                        // ==========================================
-
-                        // JIKA TIADA REKOD -> Teruskan simpan
-                        await addDoc(collection(db, "attendance"), {
-                            name: namaGuru,
-                            status: statusSemasa, 
-                            locationLink: mapLink,
-                            timestamp: serverTimestamp()
-                        });
-
-                        // Mesej berjaya
-                        statusText.innerText = `✅ Selesai! Rekod ${statusSemasa} telah disimpan.`;
-                        statusText.style.background = "#d1fae5";
-                        statusText.style.color = "#065f46";
-                        
-                    } catch (error) {
-                        console.error(error);
-                        statusText.innerText = "Ralat pangkalan data: " + error.message;
-                    }
-                }, (error) => {
-                    statusText.innerText = "❌ Sila benarkan akses Lokasi (GPS) pada pelayar bimbit anda.";
-                    if (failCount < 2) scanBtn.disabled = false;
-                }, { enableHighAccuracy: true });
-            } else {
-                statusText.innerText = "Peranti anda tidak menyokong fungsi GPS.";
-            }
-        }
-
-        initSystem();
-    </script>
+async function getGPSAndSave(name) {
+  if (processing) return;
+  if (!statusSelect.value) { setStatus('Pilih sebab ketidakhadiran sebelum meneruskan.', 'warn'); return; }
+  processing=true;
+  statusSelect.disabled=true; yesBtn.disabled=true; noBtn.disabled=true; pinBtn.disabled=true;
+  setStatus('Identiti disahkan. Mendapatkan lokasi GPS…', 'info');
+  if (!navigator.geolocation) {
+    processing=false; statusSelect.disabled=false; yesBtn.disabled=false; noBtn.disabled=false; pinBtn.disabled=false;
+    setStatus('Peranti ini tidak menyokong GPS. Sila gunakan peranti yang menyokong lokasi.', 'error'); return;
+  }
+  navigator.geolocation.getCurrentPosition(async position => {
+    try {
+      const lat=position.coords.latitude, lon=position.coords.longitude;
+      const mapLink=`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+      const now=new Date();
+      const startDate=new Date(now); startDate.setHours(0,0,0,0);
+      const endDate=new Date(now); endDate.setHours(23,59,59,999);
+      // Baca rekod guru hari ini sekali dan semak nama di pihak klien untuk mengelakkan keperluan indeks gabungan tambahan.
+      const todayQuery=query(collection(db,'teacher_attendance'),where('timestamp','>=',Timestamp.fromDate(startDate)),where('timestamp','<=',Timestamp.fromDate(endDate)));
+      const todaySnap=await getDocs(todayQuery);
+      const existing=todaySnap.docs.find(d=>String(d.data()?.name || d.data()?.['NAMA GURU'] || '').trim().toLocaleUpperCase('ms')===name.trim().toLocaleUpperCase('ms'));
+      if (existing) {
+        const old=existing.data();
+        let oldTime='hari ini';
+        if (old.timestamp?.toDate) oldTime=old.timestamp.toDate().toLocaleTimeString('ms-MY',{hour:'2-digit',minute:'2-digit'});
+        setStatus(`Rekod dibatalkan. ${name} sudah mempunyai satu rekod pada hari ini (${old.status || 'status tidak dinyatakan'}, ${oldTime}). Hubungi pentadbir jika rekod perlu dibetulkan.`, 'error');
+        cameraPlaceholder.innerHTML='<div class="face-icon">✓</div><strong>Rekod harian telah wujud</strong><span>Tiada rekod baharu dihantar.</span>';
+        cameraPlaceholder.classList.remove('hidden');
+        return;
+      }
+      await addDoc(collection(db,'teacher_attendance'),{
+        name,
+        status:statusSelect.value,
+        locationLink:mapLink,
+        latitude:lat,
+        longitude:lon,
+        source:'luar.html',
+        timestamp:serverTimestamp()
+      });
+      setStatus(`Berjaya! Rekod ${statusSelect.value} untuk ${name} telah disimpan.`, 'success');
+      cameraPlaceholder.innerHTML='<div class="face-icon">✅</div><strong>Rekod berjaya disimpan</strong><span>'+escapeHtml(name)+' · '+escapeHtml(statusSelect.value)+'<br>Lokasi GPS turut direkodkan.</span>';
+      cameraPlaceholder.classList.remove('hidden');
+      cameraFootLeft.textContent='Rekod telah dihantar ke Firebase';
+      cameraLabel.textContent='SELESAI';
+      fallbackSection.style.display='none';
+    } catch (error) {
+      console.error(error);
+      setStatus('Gagal menyimpan rekod ke Firebase: ' + error.message, 'error');
+    } finally {
+      processing=false;
+      // Kunci pilihan selepas proses dihantar supaya status tidak berubah di tengah proses.
+      statusSelect.disabled=true; yesBtn.disabled=false; noBtn.disabled=false; pinBtn.disabled=false;
+    }
+  }, error => {
+    processing=false; statusSelect.disabled=false; yesBtn.disabled=false; noBtn.disabled=false; pinBtn.disabled=false;
+    setStatus('Lokasi GPS tidak dapat diperoleh. Benarkan akses lokasi pada pelayar dan cuba lagi. ('+error.message+')', 'error');
+  }, {enableHighAccuracy:true,timeout:20000,maximumAge:0});
+}
+function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+statusSelect.addEventListener('change', () => {
+  if (!statusSelect.value) {
+    stopCamera(); confirmSection.style.display='none'; fallbackSection.style.display='none';
+    cameraPlaceholder.innerHTML='<div class="face-icon">◉</div><strong>Pilih sebab ketidakhadiran</strong><span>Kamera akan diaktifkan secara automatik selepas pilihan dibuat.</span>';
+    cameraPlaceholder.classList.remove('hidden');
+    cameraFootLeft.textContent='Kamera menunggu pilihan anda';
+    setStatus('Sila pilih sebab ketidakhadiran untuk memulakan sistem.');
+    return;
+  }
+  startCameraAndScanner();
+});
+window.addEventListener('pagehide', stopCamera);
+loadModelsAndTeachers();
+</script>
 </body>
 </html>
